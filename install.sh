@@ -36,10 +36,10 @@ import sys
 sys.exit(0 if (3, 11) <= sys.version_info[:2] <= (3, 14) else 1)
 PY
 
-echo "==> Ambiente Python (.venv)"
+echo "==> Ambiente Python (.venv): baixa as dependências, pode levar alguns minutos"
 [ -d "$PASTA/.venv" ] || python3 -m venv "$PASTA/.venv"
 "$PASTA/.venv/bin/pip" install -q --upgrade pip
-"$PASTA/.venv/bin/pip" install -q -r "$PASTA/requirements.txt"
+"$PASTA/.venv/bin/pip" install --progress-bar on -r "$PASTA/requirements.txt"
 
 echo "==> Serviço systemd ($SERVICO)"
 sed -e "s|@USUARIO@|$USUARIO|g" -e "s|@PASTA@|$PASTA|g" \
