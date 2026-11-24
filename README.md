@@ -3,6 +3,9 @@
 Gera um **status report one-page em PowerPoint** a partir de uma planilha Excel com formato
 pré-definido. Funciona como app web (Streamlit) ou pela linha de comando.
 
+**Demonstração online:** [report.jpfranca.com](https://report.jpfranca.com). Baixe o modelo, preencha e gere
+o slide sem instalar nada. Não envie dados confidenciais para a demonstração.
+
 ![Exemplo de slide gerado](docs/exemplo.png)
 
 *Slide gerado a partir de `modelo_status_report.xlsx` (Projeto Aurora, dados fictícios).*
