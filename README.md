@@ -99,6 +99,16 @@ sudo systemctl status status-report
 
 Após atualizar o código (`git pull`), reinicie com `sudo systemctl restart status-report`.
 
+O serviço já vem com limites de memória/CPU e isolamento (só escreve na pasta do app e num `/tmp`
+privado). Se o app ficar na pasta de outro usuário ou caminho, ajuste também `ReadWritePaths`.
+
+### Expor na internet
+
+O app já se protege de uso abusivo: aceita até 5 planilhas de 2 MB por envio
+(`.streamlit/config.toml`), recusa arquivos que crescem demais ao descompactar, lê no máximo 500 linhas
+por aba e gera uma prévia do LibreOffice por vez. Mesmo assim, deixe o app escutando só em `127.0.0.1` e
+publique por um túnel ou proxy (ex.: Cloudflare Tunnel), com rate limiting e desafio anti-bot na frente.
+
 ## Uso
 
 ### App web

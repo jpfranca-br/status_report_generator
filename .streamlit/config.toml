@@ -1,0 +1,10 @@
+# Limites para uso público (ex.: demonstração atrás de túnel/proxy).
+# Uma planilha do modelo tem poucos KB; 2 MB sobra.
+[server]
+maxUploadSize = 2
+maxMessageSize = 50
+enableXsrfProtection = true
+enableCORS = true
+
+[browser]
+gatherUsageStats = false

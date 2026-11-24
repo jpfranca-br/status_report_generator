@@ -1,5 +1,5 @@
 # Serviço systemd para manter o app rodando no Linux.
-# Ajuste User e WorkingDirectory, depois:
+# Ajuste User, WorkingDirectory, ExecStart e ReadWritePaths, depois:
 #   sudo cp deploy/status-report.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now status-report
@@ -13,7 +13,28 @@ WorkingDirectory=/home/seu_usuario/status_report_generator
 ExecStart=/home/seu_usuario/status_report_generator/run.sh
 Environment=HOST=127.0.0.1
 Environment=PORT=8501
+# HOME no /tmp privado: Streamlit, LibreOffice e fontconfig gravam caches ali.
+Environment=HOME=/tmp
 Restart=on-failure
+RestartSec=5
+
+# Limites de recursos: um abuso derruba no máximo o app (que reinicia), não a VPS.
+MemoryMax=1G
+CPUQuota=80%
+TasksMax=128
+
+# Isolamento: o app só escreve na própria pasta e num /tmp privado.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/seu_usuario/status_report_generator
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
 
 [Install]
 WantedBy=multi-user.target

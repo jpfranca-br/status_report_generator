@@ -12,6 +12,8 @@ import streamlit as st
 import criar_modelo
 import gerador
 
+MAX_ARQUIVOS = 5  # planilhas por envio
+
 st.set_page_config(page_title="Status report one-page", page_icon="📊", layout="wide")
 st.title("Status report one-page")
 st.caption("Suba a planilha preenchida e baixe o slide em PowerPoint.")
@@ -30,16 +32,21 @@ with st.sidebar:
     data_ref = st.date_input("Data da linha 'Hoje'", value=date.today(), format="DD/MM/YYYY",
                              help="Usada quando a planilha não define data_referencia.")
 
-arquivos = st.file_uploader("Planilhas (.xlsx). Mais de uma = um slide por planilha, no mesmo arquivo.",
+arquivos = st.file_uploader(f"Planilhas (.xlsx), até {MAX_ARQUIVOS}. Mais de uma = um slide por planilha, no mesmo arquivo.",
                             type=["xlsx"], accept_multiple_files=True)
 if not arquivos:
     st.info("Aguardando planilha.")
+    st.stop()
+if len(arquivos) > MAX_ARQUIVOS:
+    st.error(f"Envie no máximo {MAX_ARQUIVOS} planilhas por vez.")
     st.stop()
 
 relatorios, erros = [], []
 for a in arquivos:
     try:
-        r = gerador.ler_planilha(io.BytesIO(a.getvalue()), a.name)
+        dados = a.getvalue()
+        gerador.checar_xlsx(dados)
+        r = gerador.ler_planilha(io.BytesIO(dados), a.name)
         r.projeto["data_referencia"] = r.projeto.get("data_referencia") or data_ref
         relatorios.append(r)
     except Exception as e:  # planilha fora do formato

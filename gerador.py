@@ -15,6 +15,8 @@ import os
 import shutil
 import subprocess
 import tempfile
+import threading
+import zipfile
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -102,9 +104,29 @@ def _txt(v):
     return str(v).strip()
 
 
+# Limites contra planilhas abusivas (ex.: app exposto na internet).
+MAX_LINHAS_ABA = 500                    # linhas lidas por aba
+MAX_XLSX_DESCOMPACTADO = 30 * 1024**2   # bytes somados dos arquivos dentro do .xlsx
+MAX_XLSX_ENTRADAS = 300                 # arquivos dentro do .xlsx
+
+
+def checar_xlsx(dados: bytes) -> None:
+    """Recusa arquivos que não são .xlsx ou que crescem demais ao descompactar (zip bomb)."""
+    import io
+    try:
+        with zipfile.ZipFile(io.BytesIO(dados)) as z:
+            infos = z.infolist()
+    except zipfile.BadZipFile:
+        raise ValueError("o arquivo não é um .xlsx válido.") from None
+    if len(infos) > MAX_XLSX_ENTRADAS:
+        raise ValueError("o .xlsx tem conteúdo interno demais.")
+    if sum(i.file_size for i in infos) > MAX_XLSX_DESCOMPACTADO:
+        raise ValueError("o .xlsx é grande demais depois de descompactado.")
+
+
 def _linhas(ws, ncols):
     out = []
-    for row in ws.iter_rows(min_row=2, max_col=ncols, values_only=True):
+    for row in ws.iter_rows(min_row=2, max_row=MAX_LINHAS_ABA + 1, max_col=ncols, values_only=True):
         if row and any(c not in (None, "") for c in row):
             out.append(list(row) + [None] * (ncols - len(row)))
     return out
@@ -680,6 +702,9 @@ def achar_soffice():
     return None
 
 
+_LOCK_PREVIA = threading.Lock()
+
+
 def previa_png(pptx_path) -> list[bytes] | None:
     """Converte o .pptx em PNGs (um por slide). Retorna None se não houver LibreOffice."""
     soffice = achar_soffice()
@@ -689,12 +714,20 @@ def previa_png(pptx_path) -> list[bytes] | None:
         import pymupdf as fitz  # PyMuPDF
     except ImportError:
         return None
-    with tempfile.TemporaryDirectory() as tmp:
-        subprocess.run([soffice, "--headless", "--convert-to", "pdf", "--outdir", tmp, str(pptx_path)],
-                       check=True, capture_output=True, timeout=120)
-        pdf = Path(tmp) / (Path(pptx_path).stem + ".pdf")
-        doc = fitz.open(pdf)
-        return [pg.get_pixmap(dpi=110).tobytes("png") for pg in doc]
+    # Uma conversão por vez: o LibreOffice é pesado e não aceita duas instâncias no mesmo perfil.
+    if not _LOCK_PREVIA.acquire(timeout=60):
+        raise RuntimeError("servidor ocupado gerando outras prévias; tente de novo em instantes.")
+    try:
+        perfil = Path(tempfile.gettempdir()) / "status_report_lo_profile"
+        with tempfile.TemporaryDirectory() as tmp:
+            subprocess.run([soffice, f"-env:UserInstallation={perfil.as_uri()}", "--headless",
+                            "--convert-to", "pdf", "--outdir", tmp, str(pptx_path)],
+                           check=True, capture_output=True, timeout=45)
+            pdf = Path(tmp) / (Path(pptx_path).stem + ".pdf")
+            with fitz.open(pdf) as doc:
+                return [pg.get_pixmap(dpi=110).tobytes("png") for pg in doc]
+    finally:
+        _LOCK_PREVIA.release()
 
 
 if __name__ == "__main__":
