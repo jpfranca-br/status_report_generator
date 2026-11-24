@@ -50,23 +50,23 @@ py -3.13 -m venv .venv
 
 ## Instalação no Linux (Debian/Ubuntu)
 
+O `install.sh` instala tudo e deixa o app rodando como serviço systemd (sobe sozinho com o servidor):
+Python e dependências num `.venv`, LibreOffice para a prévia e as fontes. Rode como seu usuário
+normal, não como root; o script pede `sudo` quando precisa e o serviço roda com o seu usuário.
+
 ```bash
-sudo apt update
-sudo apt install -y python3-venv python3-pip git
+sudo apt update && sudo apt install -y git
 git clone https://github.com/jpfranca-br/status_report_generator.git
 cd status_report_generator
-chmod +x run.sh
-./run.sh
+./install.sh
 ```
 
-O `run.sh` cria o `.venv` e instala as dependências na primeira execução. Por padrão o app escuta só
-em `127.0.0.1:8501`.
+Por padrão o app escuta só em `127.0.0.1:8501`. Para outra porta: `PORTA=8600 ./install.sh`.
 
-Prévia do slide (opcional):
+Para **atualizar**, rode `git pull` e depois `./install.sh` de novo. Logs: `journalctl -u status-report -f`.
 
-```bash
-sudo apt install -y --no-install-recommends libreoffice-impress
-```
+O serviço vem com limites de memória/CPU e isolamento: só escreve na pasta do app e num `/tmp` privado.
+O modelo dele está em `deploy/status-report.service`.
 
 ### Acesso a partir de outra máquina
 
@@ -85,22 +85,6 @@ O app **não tem login**. Não o exponha direto na internet.
       reverse_proxy 127.0.0.1:8501
   }
   ```
-
-### Rodar como serviço (systemd)
-
-Edite usuário e caminhos em `deploy/status-report.service` e:
-
-```bash
-sudo cp deploy/status-report.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now status-report
-sudo systemctl status status-report
-```
-
-Após atualizar o código (`git pull`), reinicie com `sudo systemctl restart status-report`.
-
-O serviço já vem com limites de memória/CPU e isolamento (só escreve na pasta do app e num `/tmp`
-privado). Se o app ficar na pasta de outro usuário ou caminho, ajuste também `ReadWritePaths`.
 
 ### Expor na internet
 

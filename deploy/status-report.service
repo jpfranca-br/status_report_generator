@@ -1,22 +1,17 @@
-# Serviço systemd para manter o app rodando no Linux.
-# Ajuste User, WorkingDirectory, ExecStart e ReadWritePaths, depois:
-#   sudo cp deploy/status-report.service /etc/systemd/system/
-#   sudo systemctl daemon-reload
-#   sudo systemctl enable --now status-report
+# Modelo do serviço systemd. Não copie à mão: o install.sh preenche
+# @USUARIO@, @PASTA@, @HOST@ e @PORTA@ e instala em /etc/systemd/system/.
 [Unit]
 Description=Status report one-page (Streamlit)
 After=network.target
 
 [Service]
-User=seu_usuario
-WorkingDirectory=/home/seu_usuario/status_report_generator
-ExecStart=/home/seu_usuario/status_report_generator/run.sh
-Environment=HOST=127.0.0.1
-Environment=PORT=8501
-# HOME no /tmp privado: Streamlit, LibreOffice e fontconfig gravam caches ali.
-Environment=HOME=/tmp
+User=@USUARIO@
+WorkingDirectory=@PASTA@
+ExecStart=@PASTA@/.venv/bin/streamlit run app.py --server.address @HOST@ --server.port @PORTA@ --server.headless true
 Restart=on-failure
 RestartSec=5
+# HOME no /tmp privado: Streamlit, LibreOffice e fontconfig gravam caches ali.
+Environment=HOME=/tmp
 
 # Limites de recursos: um abuso derruba no máximo o app (que reinicia), não a VPS.
 MemoryMax=1G
@@ -29,7 +24,7 @@ PrivateTmp=true
 PrivateDevices=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/seu_usuario/status_report_generator
+ReadWritePaths=@PASTA@
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
