@@ -1,0 +1,16 @@
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Dados de projetos reais e arquivos gerados: ficam fora do repositório
+*.xlsx
+!modelo_status_report.xlsx
+*.pptx
+*.pdf
+~$*
+
+# Sistema
+.DS_Store
+Thumbs.db

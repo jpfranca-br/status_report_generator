@@ -1,0 +1,19 @@
+# Serviço systemd para manter o app rodando no Linux.
+# Ajuste User e WorkingDirectory, depois:
+#   sudo cp deploy/status-report.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now status-report
+[Unit]
+Description=Status report one-page (Streamlit)
+After=network.target
+
+[Service]
+User=seu_usuario
+WorkingDirectory=/home/seu_usuario/status_report_generator
+ExecStart=/home/seu_usuario/status_report_generator/run.sh
+Environment=HOST=127.0.0.1
+Environment=PORT=8501
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
